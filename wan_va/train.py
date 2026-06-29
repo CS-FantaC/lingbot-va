@@ -1,5 +1,6 @@
 # Copyright 2024-2025 The Robbyant Team Authors. All rights reserved.
 import argparse
+import copy
 import os
 import sys
 from pathlib import Path
@@ -505,7 +506,7 @@ class Trainer:
 
 def run(args):
     """Main entry point."""
-    config = VA_CONFIGS[args.config_name]
+    config = copy.deepcopy(VA_CONFIGS[args.config_name])
 
     rank = int(os.getenv("RANK", 0))
     local_rank = int(os.environ.get('LOCAL_RANK', 0))
@@ -520,9 +521,33 @@ def run(args):
     if args.save_root is not None:
         config.save_root = args.save_root
 
+    if args.dataset_path is not None:
+        config.dataset_path = args.dataset_path
+        if args.empty_emb_path is None:
+            config.empty_emb_path = os.path.join(config.dataset_path, "empty_emb.pt")
+
+    if args.pretrained_model_path is not None:
+        config.wan22_pretrained_model_name_or_path = args.pretrained_model_path
+
+    if args.empty_emb_path is not None:
+        config.empty_emb_path = args.empty_emb_path
+
+    if args.cfg_prob is not None:
+        config.cfg_prob = args.cfg_prob
+
+    if args.load_worker is not None:
+        config.load_worker = args.load_worker
+
     if rank == 0:
         logger.info(f"Using config: {args.config_name}")
         logger.info(f"World size: {world_size}, Local rank: {local_rank}")
+        if hasattr(config, "dataset_path"):
+            logger.info(f"Dataset path: {config.dataset_path}")
+        if hasattr(config, "wan22_pretrained_model_name_or_path"):
+            logger.info(
+                "Pretrained model path: "
+                f"{config.wan22_pretrained_model_name_or_path}"
+            )
 
     trainer = Trainer(config)
     trainer.train()
@@ -542,6 +567,36 @@ def main():
         type=str,
         default=None,
         help="Root directory for saving checkpoints",
+    )
+    parser.add_argument(
+        "--dataset-path",
+        type=str,
+        default=None,
+        help="Override config.dataset_path.",
+    )
+    parser.add_argument(
+        "--pretrained-model-path",
+        type=str,
+        default=None,
+        help="Override config.wan22_pretrained_model_name_or_path.",
+    )
+    parser.add_argument(
+        "--empty-emb-path",
+        type=str,
+        default=None,
+        help="Override config.empty_emb_path. Defaults to <dataset-path>/empty_emb.pt when dataset-path is set.",
+    )
+    parser.add_argument(
+        "--cfg-prob",
+        type=float,
+        default=None,
+        help="Override config.cfg_prob.",
+    )
+    parser.add_argument(
+        "--load-worker",
+        type=int,
+        default=None,
+        help="Override config.load_worker.",
     )
 
     args = parser.parse_args()

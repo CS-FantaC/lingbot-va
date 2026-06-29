@@ -356,11 +356,11 @@ Each `.pth` file is a dictionary containing the following fields:
 | `video_width` | `int` | Original video width in pixels |
 | `text_emb` | `Tensor [L, D]` (bfloat16) | Text embedding of the action description (encoded by Wan2.2 text encoder) |
 | `text` | `str` | The raw action description text |
-| `frame_ids` | `list[int]` | Sampled frame indices from the original episode (at target fps) |
+| `frame_ids` | `list[int]` | Sampled frame indices from the original episode using the fixed frame stride derived from the target fps |
 | `start_frame` | `int` | Start frame index matching `action_config` in `episodes.jsonl` |
 | `end_frame` | `int` | End frame index matching `action_config` in `episodes.jsonl` |
-| `fps` | `int` | Target sampling fps used for latent extraction |
-| `ori_fps` | `int` | Original fps of the episode data |
+| `fps` | `float` | Effective sampling fps written for latent extraction after stride resolution |
+| `ori_fps` | `float` | Original fps of the episode data |
 
 The latent file naming convention `episode_{index}_{start_frame}_{end_frame}.pth` corresponds to the `action_config` segments defined in `episodes.jsonl`. For example, an episode with `"start_frame": 0, "end_frame": 450` produces a latent file named `episode_000000_0_450.pth`.
 

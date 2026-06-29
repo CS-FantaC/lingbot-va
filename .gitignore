@@ -1,1 +1,5 @@
 *.pyc
+.codex/
+dev_utils
+LingBot_VA.egg-info/
+logs/
