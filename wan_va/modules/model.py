@@ -95,6 +95,7 @@ class FlexAttnFunc(nn.Module):
     def init_mask(
         latent_shape, 
         action_shape, 
+        text_length,
         padded_length, 
         chunk_size,
         window_size,
@@ -133,7 +134,7 @@ class FlexAttnFunc(nn.Module):
             )
         FlexAttnFunc.attention_mask = block_mask
 
-        text_seq_ids = torch.arange(B)[:, None].expand(-1, 512).flatten()
+        text_seq_ids = torch.arange(B)[:, None].expand(-1, text_length).flatten()
         mask_mod_cross = FlexAttnFunc._get_cross_mask_mod(seq_ids.long().to(device), text_seq_ids.long().to(device))
         block_mask_cross = FlexAttnFunc.compiled_create_block_mask(
                 mask_mod_cross, 1, 1, len(seq_ids), len(text_seq_ids), device=device, _compile=True
@@ -764,6 +765,7 @@ class WanTransformer3DModel(ModelMixin, ConfigMixin):
 
         FlexAttnFunc.init_mask(latent_dict['noisy_latents'].shape, 
                                action_dict['noisy_latents'].shape, 
+                               text_hidden_states.shape[1],
                                padded_length, 
                                input_dict["chunk_size"],
                                window_size=input_dict['window_size'],
