@@ -8,6 +8,7 @@ from typing import Any
 
 import numpy as np
 import pyarrow.parquet as pq
+from scipy.spatial.transform import Rotation as R
 
 
 DEFAULT_DATASET_ROOT = Path("/kpfs-intern/chenyandu/data/rmbench-lingbot")
@@ -19,6 +20,27 @@ DEFAULT_QUANTILES = [0.01, 0.99]
 USED_ACTION_CHANNEL_IDS = list(range(0, 7)) + [28] + list(range(7, 14)) + [29]
 RAW_ACTION_DIM = len(USED_ACTION_CHANNEL_IDS)
 MODEL_ACTION_DIM = 30
+
+
+def get_relative_pose(pose: np.ndarray) -> np.ndarray:
+    """Match wan_va.dataset.lerobot_latent_dataset.get_relative_pose()."""
+    rot = R.from_quat(pose[:, 3:7])
+    first_rot = R.from_quat(np.tile(pose[:1, 3:7], (pose.shape[0], 1)))
+    trans = pose[:, :3]
+    relative_trans = trans - trans[0:1]
+    relative_rot = first_rot.inv() * rot
+    relative_quat = relative_rot.as_quat()
+    return np.concatenate([relative_trans, relative_quat], axis=1).astype(np.float32, copy=False)
+
+
+def convert_to_relative_actions(actions: np.ndarray) -> np.ndarray:
+    """Convert absolute robotwin end-effector actions to relative-pose actions."""
+    left_action = get_relative_pose(actions[:, :7])
+    right_action = get_relative_pose(actions[:, 8:15])
+    return np.concatenate(
+        [left_action, actions[:, 7:8], right_action, actions[:, 15:16]],
+        axis=1,
+    ).astype(np.float32, copy=False)
 
 
 class RunningQuantileStats:
@@ -146,7 +168,7 @@ class RunningQuantileStats:
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Compute RMBench action q01/q99 stats for LingBot-VA training."
+        description="Compute RMBench relative-pose action q01/q99 stats for LingBot-VA training."
     )
     parser.add_argument(
         "--dataset-root",
@@ -189,7 +211,7 @@ def load_action_batch(parquet_path: Path) -> np.ndarray:
         raise ValueError(
             f"{parquet_path} has invalid action shape {actions.shape}; expected [N, {RAW_ACTION_DIM}]."
         )
-    return actions
+    return convert_to_relative_actions(actions)
 
 
 def pad_to_model_action_dim(raw_values: np.ndarray, fill_value: float = 0.0) -> list[float]:
@@ -227,6 +249,8 @@ def build_output_payload(
         "raw_action_dim": RAW_ACTION_DIM,
         "model_action_dim": MODEL_ACTION_DIM,
         "used_action_channel_ids": USED_ACTION_CHANNEL_IDS,
+        "action_space": "relative_pose",
+        "relative_pose_reference": "first_frame_per_episode",
         "quantile_method": "histogram_running_quantile",
         "num_quantile_bins": num_quantile_bins,
         "raw_stats": raw_stats_json,

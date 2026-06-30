@@ -22,5 +22,5 @@ va_rmbench_train_cfg.obs_cam_keys = [
     "observation.images.cam_right_wrist",
 ]
 va_rmbench_train_cfg.cfg_prob = 0.1
-va_rmbench_train_cfg.norm_stat_path = str(_RMBENCH_NORM_STAT_PATH)
-va_rmbench_train_cfg.norm_stat = _load_rmbench_norm_stat(va_rmbench_train_cfg.norm_stat)
+# va_rmbench_train_cfg.norm_stat_path = str(_RMBENCH_NORM_STAT_PATH)
+# va_rmbench_train_cfg.norm_stat = _load_rmbench_norm_stat(va_rmbench_train_cfg.norm_stat)

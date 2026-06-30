@@ -717,8 +717,8 @@ def feature_to_arrow_type(pa_module, spec: dict[str, Any]):
     if len(shape) == 1 and shape[0] == 1:
         return base
     if len(shape) == 1:
-        return pa_module.list_(base, shape[0])
-    raise ConversionError(f"Only scalar and 1D fixed-size features are supported, got shape={shape}")
+        return pa_module.list_(base)
+    raise ConversionError(f"Only scalar and 1D features are supported, got shape={shape}")
 
 
 def write_episode_parquet(path: Path, rows: dict[str, list[Any]]) -> None:
