@@ -5,21 +5,25 @@ set -x
 umask 007
  
 NGPU=${NGPU:-"8"}
-MASTER_PORT=${MASTER_PORT:-"29501"}
+MASTER_PORT=${MASTER_PORT:-"29500"}
 PORT=${PORT:-"1106"}
 LOG_RANK=${LOG_RANK:-"0"}
 TORCHFT_LIGHTHOUSE=${TORCHFT_LIGHTHOUSE:-"http://localhost:29510"}
-CONFIG_NAME=${CONFIG_NAME:-"robotwin_train"} # robotwin_train, libero_train
+CONFIG_NAME=${CONFIG_NAME:-"rmbench_train"} # robotwin_train, libero_train
 
 overrides=""
 if [ $# -ne 0 ]; then
     overrides="$*"
 fi
 
-export WANDB_API_KEY="your key"
-export WANDB_BASE_URL="your url"
-export WANDB_TEAM_NAME="your team name"
-export WANDB_PROJECT="your project"
+if [ -f .env ]; then
+    export $(grep -v '^#' .env | xargs)
+fi
+
+# export WANDB_API_KEY="your key"
+# export WANDB_BASE_URL="your url"
+# export WANDB_TEAM_NAME="your team name"
+# export WANDB_PROJECT="your project"
 
 ## node setting
 num_gpu=${NGPU}

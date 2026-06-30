@@ -26,10 +26,10 @@ from torch.nn.attention.flex_attention import (
 )
 from functools import partial
 
-try:
-    from flash_attn_interface import flash_attn_func
-except:
-    from flash_attn import flash_attn_func
+# try:
+#     from flash_attn_interface import flash_attn_func
+# except:
+#     from flash_attn import flash_attn_func
 
 __all__ = ['WanTransformer3DModel']
 
@@ -302,8 +302,8 @@ class WanAttention(torch.nn.Module):
         super().__init__()
         if attn_mode == 'torch':
             self.attn_op = custom_sdpa
-        elif attn_mode == 'flashattn':
-            self.attn_op = flash_attn_func
+        # elif attn_mode == 'flashattn':
+        #     self.attn_op = flash_attn_func
         elif attn_mode == 'flex':
             self.attn_op = FlexAttnFunc(cross_attention_dim_head is not None)
         else:

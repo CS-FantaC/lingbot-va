@@ -5,3 +5,5 @@ LingBot_VA.egg-info/
 logs/
 .env
 wandb/
+script/env_install.sh
+train_out/
