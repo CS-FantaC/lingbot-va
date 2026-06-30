@@ -655,7 +655,6 @@ class LatentAndTextExtractor:
 
     @torch.inference_mode()
     def encode_video(self, frames_rgb: np.ndarray) -> tuple[torch.Tensor, int, int, int]:
-        self.streaming_vae.clear_cache()
         video_tensor = (
             torch.from_numpy(frames_rgb)
             .permute(3, 0, 1, 2)
@@ -663,7 +662,7 @@ class LatentAndTextExtractor:
             .to(device=self.device, dtype=torch.float32)
         )
         video_tensor = video_tensor / 255.0 * 2.0 - 1.0
-        encoded = self.streaming_vae.encode_chunk(video_tensor.to(self.compute_dtype))
+        encoded = self.streaming_vae.encode_temporal_chunks(video_tensor.to(self.compute_dtype))
         mu, _ = torch.chunk(encoded, 2, dim=1)
         mu = self.normalize_latents(mu)
         _, channel_dim, latent_num_frames, latent_height, latent_width = mu.shape

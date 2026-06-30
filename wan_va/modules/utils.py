@@ -95,3 +95,46 @@ class WanVAEStreamingWrapper:
                            feat_idx=feat_idx)
         enc = self.quant_conv(out)
         return enc
+
+    def encode_temporal_chunks(self, x, chunk_size=4):
+        """Encode a full video using DiffSynth-style temporal chunks.
+
+        Wan VAE's cached encoder path expects the first call to contain only
+        the first frame, then subsequent calls to contain 4-frame chunks. A
+        single cached call with the full clip can desynchronize residual
+        shortcut temporal downsampling inside diffusers' Wan encoder.
+        """
+        if x.shape[2] <= 0:
+            raise ValueError(f"Expected at least one video frame, got shape {tuple(x.shape)}")
+        if chunk_size <= 0:
+            raise ValueError(f"chunk_size must be > 0, got {chunk_size}")
+
+        self.clear_cache()
+        if hasattr(self.vae.config,
+                   "patch_size") and self.vae.config.patch_size is not None:
+            x = patchify(x, self.vae.config.patch_size)
+
+        num_chunks = 1 + (x.shape[2] - 1) // chunk_size
+        chunks = []
+        for chunk_idx in range(num_chunks):
+            feat_idx = [0]
+            if chunk_idx == 0:
+                x_chunk = x[:, :, :1, :, :]
+            else:
+                start = 1 + chunk_size * (chunk_idx - 1)
+                end = 1 + chunk_size * chunk_idx
+                x_chunk = x[:, :, start:end, :, :]
+            if x_chunk.shape[2] == 0:
+                continue
+
+            chunks.append(
+                self.encoder(
+                    x_chunk,
+                    feat_cache=self.feat_cache,
+                    feat_idx=feat_idx,
+                )
+            )
+
+        out = torch.cat(chunks, dim=2)
+        enc = self.quant_conv(out)
+        return enc
